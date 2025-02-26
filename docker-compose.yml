@@ -1,0 +1,10 @@
+version: '4.38'
+
+services:
+  nuxt:
+    build:
+      context: .
+    image: real-time-inventory-management-system
+    container_name: real-time-inventory-management-system
+    ports:
+      - ${OUTPUT_PORT}:3000
