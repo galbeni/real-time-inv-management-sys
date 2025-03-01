@@ -1,4 +1,3 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   app: {
     pageTransition: {
@@ -15,7 +14,18 @@ export default defineNuxtConfig({
     enabled: true
   },
   modules: [
+    '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/svg-sprite'
-  ]
+  ],
+  i18n: {
+    locales: [
+      {
+        code: 'en',
+        file: 'en.ts'
+      }
+    ],
+    lazy: true,
+    defaultLocale: 'en'
+  }
 })
