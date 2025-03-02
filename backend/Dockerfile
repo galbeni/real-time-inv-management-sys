@@ -5,17 +5,16 @@ FROM node:23.8
 WORKDIR /app
 
 # Copy package.json files
-COPY package*.json ./
-COPY backend/package*.json ./backend/
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy backend code
-COPY backend ./backend
+COPY backend ./
 
 # Set backend port
 EXPOSE 5000
 
 # Start backend application
-CMD ["node", "backend/server.js"]
+CMD ["node", "server.js"]
