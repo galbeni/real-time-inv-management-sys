@@ -2,7 +2,12 @@
   <div class="overflow-auto rounded-lg shadow hidden lg:block">
     <table :class="classes">
       <table-header :headers="headers" />
-      <table-body :data="data" />
+      <table-body
+        :data="data"
+        :stale-products="staleProducts"
+        @refresh="$emit('refresh', $event)"
+        @update-quantity="updateQuantity"
+      />
     </table>
   </div>
 
@@ -11,6 +16,9 @@
       v-for="item in data"
       :key="item.id"
       :data="item"
+      :is-stale="staleProducts.has(item.id)"
+      @refresh="$emit('refresh', $event)"
+      @update-quantity="updateQuantity(item.id, $event.newQuantity)"
     />
   </div>
 </template>
@@ -30,11 +38,23 @@
       type: Array as PropType<Product[]>,
       required: true
     },
+    staleProducts: {
+      type: Object as PropType<Set<number>>,
+      required: true
+    },
     classes: {
       type: String,
       default: ''
     }
   });
+
+  // Define the emits
+  const emit = defineEmits(['refresh', 'update-quantity']);
+
+  // Handle quantity update and properly emit it
+  const updateQuantity = (id: number, newQuantity: number) => {
+    emit("update-quantity", id, newQuantity);
+  };
 </script>
 
 <style lang="scss" scoped></style>
