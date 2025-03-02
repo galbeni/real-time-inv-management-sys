@@ -9,6 +9,10 @@ export default defineNuxtConfig({
       mode: 'out-in'
     }
   },
+  sourcemap: {
+    server: true,
+    client: true
+  },
   compatibilityDate: '2025-02-26',
   devtools: {
     enabled: true

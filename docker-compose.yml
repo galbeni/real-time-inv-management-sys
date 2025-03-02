@@ -1,10 +1,28 @@
-version: '4.38'
+version: "4.38"
 
 services:
-  nuxt:
+  backend:
     build:
       context: .
-    image: real-time-inventory-management-system
-    container_name: real-time-inventory-management-system
+      dockerfile: backend/Dockerfile
     ports:
-      - ${OUTPUT_PORT}:3000
+      - "${BACKEND_PORT}:5001"
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - frontend
+    command: ["node", "backend/server.js"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    volumes:
+      - ./frontend:/app/frontend
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev"]
