@@ -1,10 +1,19 @@
-const express = require("express");
-const http = require("http");
-const cors = require("cors");
-const data = require("./mocks/products.ts");
+const express = require("express"); // Import Express.js server
+const http = require("http"); // Import Node.js http module
+const cors = require("cors"); // Import CORS middleware
+const { Server } = require("socket.io"); // Import Socket.io server
+const data = require("./mocks/products.ts"); // Import mock table data
 
+const BACKEND_PORT = process.env.BACKEND_PORT || 5001; // Define the server port
 const app = express();
 const server = http.createServer(app);
+
+// Create a new Socket.io server
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -27,10 +36,19 @@ app.put("/api/rows/:id", (req, res) => {
   const rowIndex = tableData.findIndex(item => item.id === id);
   if (rowIndex === -1) return res.status(404).json({ error: "Row not found" });
 
-  const { quantity, clientLastUpdated } = req.body;
+  const { quantity, clientLastUpdated, forceUpdate } = req.body;
   const serverRow = tableData[rowIndex];
 
-  // Check if there's a conflict (server has a newer version)
+  // If the client explicitly requested a force update, there is NO conflict
+  // and the server has no other job than updating the data
+  if (forceUpdate) {
+    serverRow.quantity = quantity;
+    serverRow.lastUpdated = new Date().toISOString();
+    io.emit("rowUpdated", { id });
+    return res.json(serverRow);
+  }
+
+  // Normal conflict detection if there is no forceUpdate
   if (new Date(clientLastUpdated) < new Date(serverRow.lastUpdated)) {
     return res.status(409).json({
       error: "Conflict detected",
@@ -38,12 +56,18 @@ app.put("/api/rows/:id", (req, res) => {
     });
   }
 
-  // Update server row
-  console.log(`Updating row ${id} from ${serverRow.quantity} to ${quantity}`);
+  // Update the row and notify all clients
   serverRow.quantity = quantity;
   serverRow.lastUpdated = new Date().toISOString();
-
+  io.emit("rowUpdated", { id });
   res.json(serverRow);
 });
 
-server.listen(4000, () => console.log("Server running on http://localhost:4000"));
+// WebSocket event handler
+io.on("connection", () => {
+  console.log("Client connected via WebSocket!");
+});
+
+// Start the server
+require('dotenv').config({ path: '../.env' });
+server.listen(BACKEND_PORT, "0.0.0.0", () => console.log(`Server running on http://0.0.0.0:${BACKEND_PORT}`));
