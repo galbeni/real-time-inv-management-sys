@@ -1,0 +1,28 @@
+version: "4.38"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "${BACKEND_PORT}:5001"
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - frontend
+    command: ["node", "backend/server.js"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    volumes:
+      - ./frontend:/app/frontend
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev"]
