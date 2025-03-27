@@ -4,6 +4,7 @@
       <th
         v-for="(item, index) in headers"
         :key="index"
+        :id="item.id"
         :class="[
           item.classes,
           `p-3 text-sm tracking-wide text-left`
