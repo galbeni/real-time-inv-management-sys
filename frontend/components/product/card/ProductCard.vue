@@ -23,17 +23,23 @@
           class="text-sm"
         >
           <button
-            class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-2 border border-gray-500 rounded"
+            class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-2 mr-2 border border-gray-500 rounded"
             @click="$emit('refresh', data.id)"
           >{{ $t('synchronize') }}</button>
+
+          <button
+            v-if="isConflict"
+            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 mt-2 border border-red-600 rounded"
+            @click="$emit('force-update', { id: data.id, newQuantity: data.quantity })"
+          >{{ $t('forceSave') }}</button>
         </span>
         <span
           class="text-xs"
           v-else
-        >{{ $formatDate(data.lastUpdated) }}</span>
+        >{{ data.lastSynchronized ? $formatDate(data.lastSynchronized) : '-' }}</span>
       </div>
       <div class="flex gap-x-1.5 items-center">
-        <div class="text-sm font-medium text-black">
+        <div class="text-sm font-medium text-black min-w-10">
           {{ data.quantity }} {{ $t('pieces') }}
         </div>
         <quantity-controls
@@ -57,11 +63,16 @@
     isStale: {
       type: Boolean,
       required: true
+    },
+    isConflict: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   });
 
   // Define the emits
-  const emit = defineEmits(['refresh', 'update-quantity']);
+  const emit = defineEmits(['refresh', 'update-quantity', 'force-update']);
 
   // Handle quantity update and properly emit it
   const handleQuantityUpdate = (newQuantity: number) => {

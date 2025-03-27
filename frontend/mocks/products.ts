@@ -9,6 +9,7 @@ export interface Product {
   imageUrl: string;
   quantity: number;
   lastUpdated: string;
+  lastSynchronized?: string;
 }
 
 export const tableHeaders: Header[] = [
