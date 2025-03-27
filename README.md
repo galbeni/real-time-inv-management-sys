@@ -25,6 +25,10 @@ This is a monorepo-based Nuxt 3 and Express.js application that implements a rea
     - When a product is updated on the frontend, an optimistic update is applied, meaning the UI updates immediately before sending the request to the server.
     - If the server responds with a **409 Conflict**, it indicates that another user has modified the product data. In this case, the product is marked as `stale` (outdated) and highlighted with a yellow background.
     - Users can manually resolve the conflict by refreshing the product data using a sync button.
+    - Alternatively, users can choose to resolve the conflict by clicking the **Force Save** button. This action will intentionally overwrite the server's version with the client-side state, even if it is outdated.
+    - The Force Save option is especially useful in optimistic UI flows, where a user is aware of the conflict but intentionally wants to persist their changes.
+    - The server detects the `forceUpdate` flag in the request and skips conflict detection logic, directly updating the product.
+    - This feature ensures that local changes are not lost due to background updates from other clients.
 
 ## Directory Structure
 ```
