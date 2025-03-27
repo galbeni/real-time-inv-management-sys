@@ -51,18 +51,8 @@
       const index = products.value.findIndex((item) => item.id === id); // Find product index
       if (index === -1) return; // If not found, exit
 
-      const clientQuantity = products.value[index].quantity; // Client-side quantity
-      const clientLastUpdated = products.value[index].lastUpdated; // Client-side last updated
-
       // API request: Update server with client-side quantity
-      const updatedProduct = await $fetch<Product>(`${backendUrl}/api/rows/${id}`, {
-        method: "PUT",
-        body: {
-          quantity: clientQuantity,
-          clientLastUpdated,
-          forceUpdate: true // New query parameter to force update
-        }
-      });
+      const updatedProduct = await $fetch<Product>(`${backendUrl}/api/rows/${id}`);
 
       // If successful, update the product with the server response
       // (since the server has already updated the quantity, the lastUpdated is also updated)
@@ -81,8 +71,6 @@
     const index = products.value.findIndex((item) => item.id === id); // Find product index
     if (index === -1) return; // If not found, exit
 
-    const clientLastUpdated = products.value[index].lastUpdated; // Client-side last updated
-
     products.value[index].quantity = newQuantity; // Optimistically update quantity
 
     // We add the ID to the list of locally updated products
@@ -96,13 +84,8 @@
         method: "PUT",
         body: {
           quantity: newQuantity,
-          clientLastUpdated
         }
       });
-
-      // If the update was successful, we DO NOT MARK it as stale
-      // (since we updated it, we do not expect another client to modify it)
-      products.value[index].lastUpdated = new Date().toISOString();
     } catch (err: any) {
       if (err.response?.status === 409) {
         staleProducts.value.add(id); // Mark as stale
