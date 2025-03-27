@@ -11,8 +11,10 @@
           :headers="tableHeaders"
           :data="products"
           :stale-products="staleProducts"
+          :conflicted-products="conflictedProducts"
           @refresh="synchronizeProduct"
           @update-quantity="updateQuantity"
+          @force-update="({ id, newQuantity }) => updateQuantity(id, newQuantity, true)"
         />
       </div>
     </transition>
@@ -35,6 +37,8 @@
 
   const products = ref<Product[]>([]); // All products
   const staleProducts = ref(new Set<number>()); // Track outdated rows
+  const conflictedProducts = ref(new Set<number>()); // Track conflicted rows
+  const locallyUpdatedProducts = ref(new Set<number>()); // Track locally updated rows
 
   // Fetch all products from API
   const fetchAllProducts = async () => {
@@ -45,31 +49,34 @@
     }
   };
 
-  // Refresh a specific product by id when clicking the synchronize button
+  // Sync a specific product from server (do NOT send client state)
   const synchronizeProduct = async (id: number) => {
     try {
       const index = products.value.findIndex((item) => item.id === id); // Find product index
       if (index === -1) return; // If not found, exit
 
-      // API request: Update server with client-side quantity
       const updatedProduct = await $fetch<Product>(`${backendUrl}/api/rows/${id}`);
 
       // If successful, update the product with the server response
-      // (since the server has already updated the quantity, the lastUpdated is also updated)
       // (we also remove the stale state)
-      products.value[index] = updatedProduct;
+      products.value[index] = {
+        ...updatedProduct,
+        lastSynchronized: new Date().toISOString()
+      };
+
       staleProducts.value.delete(id); // Remove stale state
+      conflictedProducts.value.delete(id); // Remove conflicted state
     } catch (err) {
       console.error(`Failed to synchronize product ${id}:`, err);
     }
   };
 
-  const locallyUpdatedProducts = ref(new Set<number>()); // Track locally updated rows
-
-  // Optimistically update quantity, then send API request
-  const updateQuantity = async (id: number, newQuantity: number) => {
+  // Optimistically update quantity, with optional forceUpdate flag
+  const updateQuantity = async (id: number, newQuantity: number, force = false) => {
     const index = products.value.findIndex((item) => item.id === id); // Find product index
     if (index === -1) return; // If not found, exit
+
+    const clientLastUpdated = products.value[index].lastUpdated; // Client-side last updated
 
     products.value[index].quantity = newQuantity; // Optimistically update quantity
 
@@ -80,15 +87,33 @@
 
     // API request: Update server with new quantity
     try {
-      await $fetch(`${backendUrl}/api/rows/${id}`, {
+      const updatedProduct = await $fetch<Product>(`${backendUrl}/api/rows/${id}`, {
         method: "PUT",
         body: {
           quantity: newQuantity,
+          clientLastUpdated,
+          forceUpdate: force
         }
       });
+
+      // If successful, update the product with the server response
+      if (force) {
+        products.value[index] = {
+          ...updatedProduct,
+          lastSynchronized: new Date().toISOString()
+        };
+      } else {
+        products.value[index].quantity = updatedProduct.quantity; // Update quantity
+        products.value[index].lastUpdated = updatedProduct.lastUpdated; // Update lastUpdated
+      }
+
+      staleProducts.value.delete(id);
+      conflictedProducts.value.delete(id);
+      locallyUpdatedProducts.value.delete(id);
     } catch (err: any) {
       if (err.response?.status === 409) {
         staleProducts.value.add(id); // Mark as stale
+        conflictedProducts.value.add(id); // Mark as conflicted
       } else {
         console.error(`Failed to update quantity for ${id}:`, err);
       }
@@ -103,12 +128,11 @@
       console.log('WebsSocket: Received update for ID:', payload.id);
 
       const product = products.value.find((item) => item.id === payload.id); // Find product by ID
-      
       if (!product) return; // If product not found, exit
 
-      // If the product ID is in the list of local modifications, we made this modification, so we DO NOT MARK it as stale
+      // Don't mark stale if we ourselves updated it
       if (locallyUpdatedProducts.value.has(payload.id)) {
-        locallyUpdatedProducts.value.delete(payload.id); // Remove from locally updated products
+        locallyUpdatedProducts.value.delete(payload.id);
         return;
       }
 

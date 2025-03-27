@@ -4,5 +4,6 @@ export default {
   ID: "ID",
   decrease: "Decrease",
   increase: "Increase",
-  synchronize: "Synchronize"
+  synchronize: "Synchronize",
+  forceSave: "Force Save",
 }
