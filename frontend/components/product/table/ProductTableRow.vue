@@ -56,11 +56,13 @@
 </script>
 
 <style lang="scss" scoped>
-  tr td {
-    padding: 10px;
-  }
+  tr {
+    td {
+      padding: 10px;
+    }
 
-  tr.stale {
-    background-color: #fff3cd; // Background color for stale products
+    &.stale {
+      background-color: #fff3cd; // Background color for stale products
+    }
   }
 </style>
