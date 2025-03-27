@@ -6,9 +6,10 @@
           to="/"
           class="flex justify-center py-5"
         >
-          <svg-icon
-            name="antavo-logo"
-            class="antavo-logo"
+          <img
+            src="/assets/images/inventory-system-logo.webp"
+            alt=""
+            class="logo"
           />
         </nuxt-link>
         <slot />
@@ -18,9 +19,8 @@
 </template>
 
 <style lang="scss" scoped>
-  .antavo-logo {
+  .logo {
     width: 100%;
-    max-width: 200px;
-    height: 58px;
+    max-width: 300px;
   }
 </style>
